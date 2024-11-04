@@ -2,15 +2,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution and restore dependencies
-COPY ["WeatherTraker.API/WeatherTraker.API.csproj", "WeatherTraker.API/"]
-COPY ["WeatherTracker.Core/WeatherTracker.Core.csproj", "WeatherTracker.Core/"]
-COPY ["WeatherTracker.Infrastructure/WeatherTracker.Infrastructure.csproj", "WeatherTracker.Infrastructure/"]
-COPY ["WeatherTracker.Shared/WeatherTracker.Shared.csproj", "WeatherTracker.Shared/"]
+# Copy .csproj files and restore dependencies
+COPY src/WeatherTraker.API/WeatherTraker.API.csproj WeatherTraker.API/
+COPY src/WeatherTracker.Core/WeatherTracker.Core.csproj WeatherTracker.Core/
+COPY src/WeatherTracker.Infrastructure/WeatherTracker.Infrastructure.csproj WeatherTracker.Infrastructure/
+COPY src/WeatherTracker.Shared/WeatherTracker.Shared.csproj WeatherTracker.Shared/
 RUN dotnet restore "WeatherTraker.API/WeatherTraker.API.csproj"
 
-# Copy all files and build
-COPY . .
+# Copy the rest of the files and build
+COPY src/ ./
 WORKDIR "/src/WeatherTraker.API"
 RUN dotnet build "WeatherTraker.API.csproj" -c Release -o /app/build
 
