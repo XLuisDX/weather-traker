@@ -29,10 +29,10 @@ jobs:
         node-version: '20'
 
     - name: Restore .NET dependencies
-      run: dotnet restore src/WeatherTracker.API/WeatherTracker.API.csproj
+      run: dotnet restore src/WeatherTraker.API/WeatherTraker.API.csproj
 
     - name: Build .NET
-      run: dotnet build src/WeatherTracker.API/WeatherTracker.API.csproj --configuration Release
+      run: dotnet build src/WeatherTraker.API/WeatherTraker.API.csproj --configuration Release
 
     - name: Install Node dependencies
       run: |
@@ -61,7 +61,7 @@ jobs:
 
     - name: Build and push API image
       run: |
-        docker build -f src/WeatherTracker.API/Dockerfile -t ${{ env.AZURE_REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }} .
+        docker build -f src/WeatherTraker.API/Dockerfile -t ${{ env.AZURE_REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }} .
         docker push ${{ env.AZURE_REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
 
     - name: Build and push Client image
