@@ -1,0 +1,96 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AZURE_REGISTRY: weathertrakerregistry.azurecr.io
+  API_IMAGE_NAME: weather-tracker-api
+  CLIENT_IMAGE_NAME: weather-tracker-client
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Restore .NET dependencies
+      run: dotnet restore src/WeatherTracker.API/WeatherTracker.API.csproj
+
+    - name: Build .NET
+      run: dotnet build src/WeatherTracker.API/WeatherTracker.API.csproj --configuration Release
+
+    - name: Install Node dependencies
+      run: |
+        cd src/weather-tracker-client
+        npm install
+
+    - name: Build React app
+      run: |
+        cd src/weather-tracker-client
+        npm run build
+
+  docker-build-and-push:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.AZURE_REGISTRY }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    - name: Build and push API image
+      run: |
+        docker build -f src/WeatherTracker.API/Dockerfile -t ${{ env.AZURE_REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }} .
+        docker push ${{ env.AZURE_REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
+
+    - name: Build and push Client image
+      run: |
+        docker build -f src/weather-tracker-client/Dockerfile -t ${{ env.AZURE_REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ github.sha }} .
+        docker push ${{ env.AZURE_REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    needs: docker-build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Azure Container Apps
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          # Deploy API
+          az containerapp update \
+            --name weather-tracker-api \
+            --resource-group rg-weathertrack-dev-cae \
+            --image ${{ env.AZURE_REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
+
+          # Deploy Client
+          az containerapp update \
+            --name weather-tracker-client \
+            --resource-group rg-weathertrack-dev-cae \
+            --image ${{ env.AZURE_REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ github.sha }}
