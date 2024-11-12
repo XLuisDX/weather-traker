@@ -1,0 +1,89 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AZURE_CONTAINER_REGISTRY: "crweathertrackdevcae"
+  CONTAINER_APP_FRONTEND: "weather-tracker-frontend"
+  CONTAINER_APP_BACKEND: "weather-tracker-backend"
+  RESOURCE_GROUP: "rg-weathertrack-dev-cae"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    # Frontend Build
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+        
+    - name: Build Frontend
+      working-directory: ./src/weather-tracker-client
+      run: |
+        npm install
+        npm run build
+        
+    # Backend Build
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Build Backend
+      run: |
+        dotnet restore ./src/WeatherTracker.API
+        dotnet build ./src/WeatherTracker.API -c Release
+        
+    # Docker Build & Push
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
+        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+        
+    - name: Build and Push Frontend Docker Image
+      run: |
+        docker build ./src/weather-tracker-client -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
+        
+    - name: Build and Push Backend Docker Image
+      run: |
+        docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        
+    # Deploy to Azure Container Apps
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Deploy Frontend to Container Apps
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
+        containerAppName: ${{ env.CONTAINER_APP_FRONTEND }}
+        imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
+        
+    - name: Deploy Backend to Container Apps
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
+        containerAppName: ${{ env.CONTAINER_APP_BACKEND }}
+        imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+
+    # Configure monitoring (can be extended based on your needs)
+    - name: Configure Monitoring
+      run: |
+        az monitor log-analytics workspace update \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --workspace-name weather-tracker-logs \
+          --retention-time 30

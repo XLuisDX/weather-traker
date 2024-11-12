@@ -1,0 +1,62 @@
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Dd]ist/
+[Dd]ist/
+[Dd]ebug_*\
+[Dd]ebug/
+bin/
+obj/
+
+## User-specific files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+## Windows Installer files for IIS
+/IIS/
+*.vspscc
+*.vssscc
+
+## User-specific files for Visual Studio for Mac
+.vscode/
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Azure-specific files
+*.publishsettings
+*.azureconfig
+
+# Docker
+**/docker-compose.override.yml
+docker-compose.override.yml
+*.env
+
+# Node.js
+node_modules/
+
+# npm
+npm-debug.log
+yarn-error.log
+
+# JetBrains Rider
+.idea/
+
+# Mac OS
+.DS_Store
