@@ -14,20 +14,22 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+                "https://weather-tracker-frontend.nicemeadow-ebda215e.canadaeast.azurecontainerapps.io",
+                "http://weather-tracker-frontend.nicemeadow-ebda215e.canadaeast.azurecontainerapps.io",
+                "http://localhost:3000"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .WithExposedHeaders("Content-Disposition");
     });
 });
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHealthChecks();
 
 var app = builder.Build();
-
-app.MapGet("/", () => "Weather Tracker API is running!");
 
 if (app.Environment.IsDevelopment())
 {
@@ -36,8 +38,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-app.UseAuthorization();
 
+app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapControllers();
 
