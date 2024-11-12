@@ -2,7 +2,7 @@ import axios from "axios";
 import { WeatherData, LocationSearch } from "../types/weather";
 
 const API_BASE_URL =
-  "http://weather-tracker-backend.nicemeadow-ebda215e.canadaeast.azurecontainerapps.io/api/weather";
+  "https://weather-tracker-backend.nicemeadow-ebda215e.canadaeast.azurecontainerapps.io/api/weather";
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
