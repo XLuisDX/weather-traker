@@ -79,6 +79,12 @@ jobs:
         resourceGroup: ${{ env.RESOURCE_GROUP }}
         containerAppName: ${{ env.CONTAINER_APP_BACKEND }}
         imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        targetPort: 8080
+        ingress: external
+        environmentVariables: |
+          ASPNETCORE_ENVIRONMENT=Production
+          ASPNETCORE_URLS=http://+:8080
+          OpenWeather__ApiKey=${{ secrets.OPENWEATHER_API_KEY }}
 
     # Configure monitoring (can be extended based on your needs)
     - name: Configure Monitoring
