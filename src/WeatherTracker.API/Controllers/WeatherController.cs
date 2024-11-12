@@ -18,10 +18,19 @@ namespace WeatherTracker.API.Controllers
             _logger = logger;
         }
 
+        // Root API endpoint
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok(new { message = "Weather API is working!" });
+            return Ok(new
+            {
+                status = "online",
+                message = "Weather API is running",
+                endpoints = new[] {
+                    "/api/weather/{city}/{countryCode}",
+                    "/api/weather/forecast/{city}/{countryCode}?days=5"
+                }
+            });
         }
 
         [HttpGet("{city}/{countryCode}")]
