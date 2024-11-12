@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WeatherTracker.Core.Interfaces.Services;
 
-
 namespace WeatherTracker.API.Controllers
 {
     [ApiController]
@@ -19,11 +18,18 @@ namespace WeatherTracker.API.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
+        public IActionResult Get()
+        {
+            return Ok(new { message = "Weather API is working!" });
+        }
+
         [HttpGet("{city}/{countryCode}")]
         public async Task<ActionResult<WeatherDataDto>> GetWeather(string city, string countryCode)
         {
             try
             {
+                _logger.LogInformation("Getting weather for {City}, {CountryCode}", city, countryCode);
                 var result = await _weatherService.GetWeatherByLocationAsync(city, countryCode);
                 return Ok(result);
             }
@@ -42,6 +48,7 @@ namespace WeatherTracker.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting forecast for {City}, {CountryCode}, days: {days}", city, countryCode, days);
                 var result = await _weatherService.GetWeatherForecastAsync(city, countryCode, days);
                 return Ok(result);
             }

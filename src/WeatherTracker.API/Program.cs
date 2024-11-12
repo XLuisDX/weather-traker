@@ -3,7 +3,6 @@ using WeatherTracker.Infrastructure.External.WeatherService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
 builder.Services.Configure<WeatherServiceConfig>(
     builder.Configuration.GetSection("WeatherService"));
 
@@ -11,37 +10,35 @@ builder.Services.AddHttpClient<IWeatherService, OpenWeatherMapService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IWeatherDataCacheService, WeatherDataCacheService>();
 
-// CORS policy for React frontend
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("ReactApp", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
-});
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.ListenAnyIP(8080);
 });
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+app.MapGet("/", () => "Weather Tracker API is running!");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseCors("ReactApp");
+app.UseCors("AllowAll");
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
