@@ -40,7 +40,6 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
-app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();

@@ -67,7 +67,7 @@ const CurrentWeather: React.FC<CurrentWeatherProps> = ({ data, isLoading }) => {
           <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
             <ThermostatOutlined sx={{ mr: 1, color: "primary.main" }} />
             <Typography variant="h3">
-              {Math.round(data.temperature)}°C
+              {Math.round((data.temperature * 9) / 5 + 32)}°F
             </Typography>
           </Box>
           <Chip

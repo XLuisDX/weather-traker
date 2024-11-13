@@ -60,7 +60,7 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({
               </Typography>
 
               <Typography variant="h4" sx={{ mb: 1 }}>
-                {Math.round(day.temperature)}°C
+                {Math.round((day.temperature * 9) / 5 + 32)}°F
               </Typography>
 
               <Typography
