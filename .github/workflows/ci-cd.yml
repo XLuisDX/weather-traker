@@ -38,7 +38,6 @@ jobs:
         cd src/weather-tracker-client
         docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} .
         docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
-        docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
         docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
 
     # Deploy to Azure Web App
