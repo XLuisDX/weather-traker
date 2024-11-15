@@ -28,22 +28,22 @@ jobs:
     - name: Log into ACR
       uses: azure/docker-login@v1
       with:
-        login-server: ${{ env.ACR_REGISTRY }}
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
+        login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}
+        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
         
     # Build and push frontend image
     - name: Build and Push Frontend Image
       run: |
         cd src/weather-tracker-client
-        docker build -t ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} .
-        docker push ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
-        docker tag ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
-        docker push ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+        docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} .
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+        docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
 
     # Deploy to Azure Web App
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        images: ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+        images: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
