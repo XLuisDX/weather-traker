@@ -16,10 +16,8 @@ env:
   FRONTEND_IMAGE_NAME: frontend
 
 jobs:
-  azure-login:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    outputs:
-      registry-server: ${{ env.AZURE_CONTAINER_REGISTRY }}
     
     steps:
     - uses: actions/checkout@v2
@@ -37,12 +35,6 @@ jobs:
         login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
         username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
         password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
-  
-  build:
-    runs-on: ubuntu-latest
-    needs: azure-login
-    steps:
-    - uses: actions/checkout@v2
     
     # Build Frontend
     - name: Set up Node.js
@@ -69,38 +61,18 @@ jobs:
       run: |
         dotnet restore ./src/WeatherTracker.API
         dotnet build ./src/WeatherTracker.API -c Release   
-    
-    # Docker Build & Push
-    - name: Login to Azure Container Registry
-      uses: azure/docker-login@v1
-      with:
-        login-server: ${{ needs.azure-login.outputs.registry-server }}.azurecr.io
-        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
-        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
         
     - name: Build and Push Frontend Docker Image
       run: |
-        docker build ./src/weather-tracker-client -t ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/frontend:${{ github.sha }}
-        docker push ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/frontend:${{ github.sha }}
-        docker tag ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
-        docker push ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
+        docker build ./src/weather-tracker-client -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+        docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
            
     - name: Build and Push Backend Docker Image
       run: |
-        docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/backend:${{ github.sha }}
-        docker push ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/backend:${{ github.sha }}
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-    - uses: actions/checkout@v2
-    
-    # Log into Azure for deployments
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
     
     # Deploy to Azure Web App
     - name: Deploy to Azure Web App
