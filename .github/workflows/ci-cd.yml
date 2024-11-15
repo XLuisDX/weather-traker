@@ -7,9 +7,12 @@ on:
     branches: [ main ]
 
 env:
+  AZURE_CONTAINER_REGISTRY: "crweathertrackdevcae"
+  CONTAINER_APP_FRONTEND: "weather-tracker-frontend"
+  CONTAINER_APP_BACKEND: "weather-tracker-backend"
+  RESOURCE_GROUP: "rg-weathertrack-dev-cae"
   AZURE_WEBAPP_NAME: weather-tracker-frontend
-  ACR_REGISTRY: crweathertrackdevcae.azurecr.io
-  FRONTEND_IMAGE_NAME: frontend
+  AZURE_WEBAPP_PACKAGE_PATH: ./src/weather-tracker-client/build
 
 jobs:
   build-and-deploy:
@@ -31,14 +34,50 @@ jobs:
         login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
         username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
         password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+    # Build Frontend
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
         
-    # Build and push frontend image
-    - name: Build and Push Frontend Image
+    - name: Install Dependencies
+      working-directory: ./src/weather-tracker-client
+      run: npm install
+        
+    - name: Build Frontend
+      working-directory: ./src/weather-tracker-client
       run: |
-        cd src/weather-tracker-client
-        docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} .
-        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
-        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+        npm run build
+
+     # Backend Build
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Build Backend
+      run: |
+        dotnet restore ./src/WeatherTracker.API
+        dotnet build ./src/WeatherTracker.API -c Release   
+    
+    # Docker Build & Push
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
+        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+        
+    - name: Build and Push Frontend Docker Image
+      run: |
+        docker build ./src/weather-tracker-client -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
+        
+    - name: Build and Push Backend Docker Image
+      run: |
+        docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
 
     # Deploy to Azure Web App
     - name: Deploy to Azure Web App
@@ -46,3 +85,22 @@ jobs:
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         images: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+
+     # Deploy to Azure Container Apps
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy Backend to Container Apps
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
+        containerAppName: ${{ env.CONTAINER_APP_BACKEND }}
+        imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        targetPort: 8080
+        ingress: external
+        environmentVariables: |
+          ASPNETCORE_ENVIRONMENT=Production
+          ASPNETCORE_URLS=http://+:8080
+          OpenWeather__ApiKey=${{ secrets.OPENWEATHER_API_KEY }}
