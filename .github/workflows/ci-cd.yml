@@ -71,22 +71,16 @@ jobs:
         dotnet build ./src/WeatherTracker.API -c Release   
     
     # Docker Build & Push
-    - name: Login to Azure Container Registry
-      uses: azure/docker-login@v1
-      with:
-        login-server: ${{ needs.azure-login.outputs.registry-server }}.azurecr.io
-        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
-        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
-        
-    - name: Build and Push Frontend Docker Image
+   - name: Build and Push Frontend Docker Image
       run: |
         docker build ./src/weather-tracker-client -t ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/frontend:${{ github.sha }}
         docker push ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/frontend:${{ github.sha }}
-        
+
     - name: Build and Push Backend Docker Image
       run: |
         docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/backend:${{ github.sha }}
         docker push ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/backend:${{ github.sha }}
+
         
   deploy:
     runs-on: ubuntu-latest
