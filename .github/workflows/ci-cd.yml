@@ -13,6 +13,7 @@ env:
   RESOURCE_GROUP: "rg-weathertrack-dev-cae"
   AZURE_WEBAPP_NAME: weather-tracker-frontend
   AZURE_WEBAPP_PACKAGE_PATH: ./src/weather-tracker-client/build
+  FRONTEND_IMAGE_NAME: frontend
 
 jobs:
   build-and-deploy:
@@ -73,7 +74,9 @@ jobs:
       run: |
         docker build ./src/weather-tracker-client -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
         docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
-        
+        docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
+           
     - name: Build and Push Backend Docker Image
       run: |
         docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
@@ -84,7 +87,7 @@ jobs:
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        images: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+        images: '${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}'
 
      # Deploy to Azure Container Apps
     - name: Login to Azure
