@@ -8,8 +8,8 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: weather-tracker-frontend
-  AZURE_WEBAPP_PACKAGE_PATH: ./src/weather-tracker-client/build
-  NODE_VERSION: '18.x'
+  ACR_REGISTRY: crweathertrackdevcae.azurecr.io
+  FRONTEND_IMAGE_NAME: frontend
 
 jobs:
   build-and-deploy:
@@ -18,25 +18,32 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Build Frontend
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
+    # Log into Azure
+    - name: Azure Login
+      uses: azure/login@v1
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Log into ACR
+    - name: Log into ACR
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.ACR_REGISTRY }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
         
-    - name: Install Dependencies
-      working-directory: ./src/weather-tracker-client
-      run: npm install
-        
-    - name: Build Frontend
-      working-directory: ./src/weather-tracker-client
+    # Build and push frontend image
+    - name: Build and Push Frontend Image
       run: |
-        npm run build
-        
-    # Deploy Frontend to Azure Web App
+        cd src/weather-tracker-client
+        docker build -t ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} .
+        docker push ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+        docker tag ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+        docker push ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+
+    # Deploy to Azure Web App
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        images: ${{ env.ACR_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
