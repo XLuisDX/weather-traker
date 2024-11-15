@@ -15,8 +15,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy.WithOrigins(
-                "https://weather-tracker-frontend.nicemeadow-ebda215e.canadaeast.azurecontainerapps.io",
-                "http://weather-tracker-frontend.nicemeadow-ebda215e.canadaeast.azurecontainerapps.io",
+               "https://weather-tracker-frontend.azurewebsites.net", 
+                "http://weather-tracker-frontend.azurewebsites.net",
+                "https://localhost:3000",
                 "http://localhost:3000"
             )
             .AllowAnyMethod()

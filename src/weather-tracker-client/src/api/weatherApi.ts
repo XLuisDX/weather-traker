@@ -2,6 +2,7 @@ import axios from "axios";
 import { WeatherData, LocationSearch } from "../types/weather";
 
 const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
   "https://weather-tracker-backend.nicemeadow-ebda215e.canadaeast.azurecontainerapps.io/api/weather";
 
 // Create axios instance with default config
@@ -24,7 +25,7 @@ const weatherApi = {
       );
       return response.data;
     } catch (error) {
-      console.error('Error fetching current weather:', error);
+      console.error("Error fetching current weather:", error);
       throw error;
     }
   },
@@ -39,7 +40,7 @@ const weatherApi = {
       );
       return response.data;
     } catch (error) {
-      console.error('Error fetching forecast:', error);
+      console.error("Error fetching forecast:", error);
       throw error;
     }
   },
