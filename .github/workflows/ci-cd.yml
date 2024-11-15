@@ -16,9 +16,10 @@ env:
   FRONTEND_IMAGE_NAME: frontend
 
 jobs:
-  build-and-deploy:
+  login:
+
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v2
 
@@ -35,6 +36,8 @@ jobs:
         login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
         username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
         password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+  build:
 
     # Build Frontend
     - name: Set up Node.js
@@ -76,11 +79,13 @@ jobs:
         docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
         docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
         docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE_NAME }}:latest
-           
+
     - name: Build and Push Backend Docker Image
       run: |
         docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
         docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        
+  deploy:
 
     # Deploy to Azure Web App
     - name: Deploy to Azure Web App
