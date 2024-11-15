@@ -19,7 +19,7 @@ jobs:
   azure-login:
     runs-on: ubuntu-latest
     outputs:
-      registry-server: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
+      registry-server: ${{ env.AZURE_CONTAINER_REGISTRY }}
       
     steps:
     - uses: actions/checkout@v2
@@ -80,13 +80,13 @@ jobs:
         
     - name: Build and Push Frontend Docker Image
       run: |
-        docker build ./src/weather-tracker-client -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
-        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/frontend:${{ github.sha }}
+        docker build ./src/weather-tracker-client -t ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/frontend:${{ github.sha }}
+        docker push ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/frontend:${{ github.sha }}
         
     - name: Build and Push Backend Docker Image
       run: |
-        docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
-        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/backend:${{ github.sha }}
+        docker build -f ./src/WeatherTracker.API/Dockerfile ./src -t ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/backend:${{ github.sha }}
+        docker push ${{ needs.azure-login.outputs.registry-server }}.azurecr.io/backend:${{ github.sha }}
         
   deploy:
     runs-on: ubuntu-latest
